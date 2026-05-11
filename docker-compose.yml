@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:18-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./volumes/data:/var/lib/postgresql/18/docker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  srv:
+    build: .
+    restart: unless-stopped
+    ports:
+      - target: 80
+        published: 25980
+        host_ip: 127.0.0.1
+        name: http
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: check_status
+    depends_on:
+      db:
+        condition: service_healthy
